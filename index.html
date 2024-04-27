@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>Access the Camera</h1>
+
+<video id="video" width="640" height="480" autoplay></video>
+<button id="startCamera">Start Camera</button>
+<button id="stopCamera">Stop Camera</button>
+<button id="snap">Snap Photo</button>
+<button id="startVoice">Start Voice</button>
+<button id="stopVoice">Stop Voice</button>
+<canvas id="canvas" width="640" height="480"></canvas>
+
+<script>
+// Grab elements, create settings, etc.
+var video = document.getElementById('video');
+var stream;
+
+// Get access to the camera!
+document.getElementById("startCamera").addEventListener("click", function() {
+    if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        // Not adding `{ audio: true }` since we only want video now
+        navigator.mediaDevices.getUserMedia({ video: true }).catch(function(err) {
+            alert("Error accessing camera: " + err);
+        }).then(function(mediaStream) {
+            stream = mediaStream;
+            video.srcObject = stream;
+            video.play();
+        });
+    }
+});
+
+// Stop the camera
+document.getElementById("stopCamera").addEventListener("click", function() {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+    }
+});
+
+// Elements for taking the snapshot
+var canvas = document.getElementById('canvas');
+var context = canvas.getContext('2d');
+var video = document.getElementById('video');
+
+// Trigger photo take
+document.getElementById("snap").addEventListener("click", function() {
+	snapPhoto();
+});
+
+// Voice recognition
+var SpeechRecognition = SpeechRecognition || webkitSpeechRecognition;
+var recognition = new SpeechRecognition();
+recognition.continuous = true;
+recognition.interimResults = true;
+
+document.getElementById("startVoice").addEventListener("click", function() {
+    recognition.start();
+});
+
+document.getElementById("stopVoice").addEventListener("click", function() {
+    recognition.stop();
+});
+
+recognition.onresult = function(event) {
+    var transcript = Array.from(event.results)
+        .map(result => result[0])
+        .map(result => result.transcript)
+        .join('');
+
+    if (transcript.includes('Iris')) {
+        snapPhoto();
+    }
+};
+
+function snapPhoto() {
+	context.drawImage(video, 0, 0, 640, 480);
+    var data = canvas.toDataURL('image/png').replace('data:image/png;base64,', '');
+    fetch('/image', {
+        method: 'POST',
+        body: data
+    }).then(response => {
+        if (!response.ok) {
+            throw new Error("HTTP error " + response.status);
+        }
+        return response.text();
+    }).then(description => {
+        speak(description);
+    }).catch(function(error) {
+        alert("Error: " + error);
+    });
+}
+
+function speak(text) {
+    var msg = new SpeechSynthesisUtterance();
+    msg.text = text;
+    window.speechSynthesis.speak(msg);
+}
+</script>
+
+</body>
+</html>
