@@ -1,3 +1,7 @@
+apt-get update && apt-get install -y \
+    libgl1-mesa-glx \
+    libsm6 \
+    libxext6
 from fastapi import FastAPI, UploadFile
 import cv2
 import numpy as np
