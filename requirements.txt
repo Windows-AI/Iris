@@ -3,4 +3,7 @@ uvicorn==0.29.0
 opencv-python==4.9.0.80
 Pillow==10.0.0
 celery==5.4.0
-
+opencv-python==4.9.0.80
+numpy==1.26.4
+python-multipart==0.0.9
+  
